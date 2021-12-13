@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option go_package = "./;authpb";
+
+package authpb;
+
+service Auth {
+  rpc GetToken(GetTokenRequest) returns (GetTokenResponse) {}
+  rpc GetUsername(GetUsernameRequest) returns (GetUsernameResponse) {}
+}
+
+message GetTokenRequest {
+  string username = 1;
+}
+
+message GetTokenResponse {
+  string token = 1;
+}
+
+message GetUsernameRequest {
+  string token = 1;
+}
+
+message GetUsernameResponse {
+  string username = 1;
+}
