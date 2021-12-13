@@ -1,7 +1,7 @@
 import Vue from 'vue';
 import Element from 'element-ui'
 import router from '../router'
-import axios from "./axios";
+import axios from "axios";
 import store from "../store"
 
 let config = {
