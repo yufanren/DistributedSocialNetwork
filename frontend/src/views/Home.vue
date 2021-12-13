@@ -20,8 +20,8 @@
 </template>
 
 <script>
-    import BlogList from "../views/blog/List"
-    import Sidebar from '../views/sidebar/Index'
+    import BlogList from "./blog/List"
+    import Sidebar from './sidebar'
 
     export default {
         name: "Home",

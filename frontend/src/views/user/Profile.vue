@@ -8,8 +8,8 @@
                         <p class="mt-3">{{ username }}</p>
                     </div>
                     <div>
-                        <p class="content">Following：{{ follower_num }}</p>
-                        <p class="content">Follower：{{ followed_num }}</p>
+                        <p class="content">Following：{{ followed_num }}</p>
+                        <p class="content">Follower：{{ follower_num }}</p>
                     </div>
                 </el-card>
             </div>
@@ -41,6 +41,7 @@ export default {
         this.$axios.get("/follow_list/" + this.username).then(res => {
             this.followed_num = res.data.data.total
         })
+        console.log(this.follower_num)
     }
 }
 </script>

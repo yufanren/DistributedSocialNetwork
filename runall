@@ -1,0 +1,13 @@
+#!/bin/bash
+make run-auth &
+make run-etcdclient &
+make run-web &
+# cd ~/golabs/etcd && goreman -f Procfile start & #etcd
+# cd ~/golabs/go-final-project/frontend && npm run serve
+cd etcd && goreman -f Procfile start &
+cd frontend && npm run serve
+
+trap 'kill $BGPID; exit' INT
+sleep 1024 &
+BGPID=$!
+sleep 1024

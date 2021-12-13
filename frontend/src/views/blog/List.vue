@@ -12,7 +12,7 @@
                         <div class="">
                             <p class="ellipsis is-ellipsis-1">
                                 <el-tooltip class="item" effect="dark" :content="blog.Title" placement="top">
-                                    <router-link :to="{ name:'BlogDetail', params:{ id: blog.Blogid }}">
+                                    <router-link :to="{ name:'BlogDetail', params:{ id: blog.BlogId }}">
                                         <span class="level-left">{{ blog.Title }}</span>
                                     </router-link>
                                 </el-tooltip>
@@ -98,7 +98,6 @@
                         // this.page.current = data.current
                         this.page.total = data.total
                         // this.page.size = data.size
-                        for(let i = 0; i < data.blogs.length; i++) data.blogs[i].Blogid = i.toString()
                         this.blogs = data.blogs
                     })
                 } else if(this.opt == "follow") {
@@ -107,7 +106,6 @@
                         // this.page.current = data.current
                         this.page.total = data.total
                         // this.page.size = data.size
-                        for(let i = 0; i < data.blogs.length; i++) data.blogs[i].Blogid = i.toString()
                         this.blogs = data.blogs
                     })
                 }

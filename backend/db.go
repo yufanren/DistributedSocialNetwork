@@ -1,36 +1,37 @@
-package main
+package backend
 
 import (
-	pb "dist-demo/proto"
-	"errors"
-	"golang.org/x/crypto/bcrypt"
-	"math"
-	"sync"
+
+"errors"
+"final-project-0b5a2e16-ly2062-yufanren/backend/backendpb"
+"golang.org/x/crypto/bcrypt"
+"math"
+"sync"
 )
 
 type DB struct {
 	user map[string]*UserInfo
-	blogs []*pb.Blog
+	blogs []*backendpb.Blog
 	// follow map[string]bool
 	DBLock sync.RWMutex
 }
 
 type UserInfo struct {
 	passwordHash []byte
-	blogs []*pb.Blog
+	blogs []*backendpb.Blog
 	followed map[string]bool
 	follower map[string]bool
 }
 
-func newDB() *DB {
+func NewDB() *DB {
 	db := DB{}
 	db.user = make(map[string]*UserInfo)
-	db.blogs = make([]*pb.Blog, 0)
+	db.blogs = make([]*backendpb.Blog, 0)
 	// db.follow = make(map[string]bool)
 	return &db
 }
 
-func (db *DB) addUser(username string, password string) error {
+func (db *DB) AddUser(username string, password string) error {
 	db.DBLock.Lock()
 	defer db.DBLock.Unlock()
 
@@ -42,30 +43,30 @@ func (db *DB) addUser(username string, password string) error {
 	if err != nil {
 		return errors.New("error hashing password")
 	}
-	db.user[username] = &UserInfo {
+	db.user[username] = &UserInfo{
 		passwordHash: hash,
-		blogs: make([]*pb.Blog, 0),
+		blogs: make([]*backendpb.Blog, 0),
 		followed: make(map[string]bool),
 		follower: make(map[string]bool),
 	}
 	return nil
 }
 
-func (db *DB) hasUser(username string) bool {
+func (db *DB) HasUser(username string) bool {
 	db.DBLock.RLock()
 	defer db.DBLock.RUnlock()
 	_, ok := db.user[username]
 	return ok
 }
 
-func (db *DB) validUser(username string, password string) bool {
+func (db *DB) ValidUser(username string, password string) bool {
 	db.DBLock.RLock()
 	defer db.DBLock.RUnlock()
 	err := bcrypt.CompareHashAndPassword(db.user[username].passwordHash, []byte(password))
 	return err != bcrypt.ErrMismatchedHashAndPassword
 }
 
-func (db *DB) followUser(parent string, follower string) {
+func (db *DB) FollowUser(parent string, follower string) {
 	db.DBLock.Lock()
 	defer db.DBLock.Unlock()
 	// if db.follow[parent + " " + follower] {
@@ -99,11 +100,11 @@ func (db *DB) isFollow(parent string, follower string) bool {
 	userinfo, ok := db.user[follower]
 	if ok {
 		return userinfo.followed[parent]
-	} 
+	}
 	return false
 }
 
-func (db *DB) addBlog(blog *pb.Blog) int {
+func (db *DB) AddBlog(blog *backendpb.Blog) int {
 	db.DBLock.Lock()
 	defer db.DBLock.Unlock()
 	db.blogs = append(db.blogs, blog)
@@ -114,8 +115,8 @@ func (db *DB) addBlog(blog *pb.Blog) int {
 	return len(db.blogs) - 1
 }
 
-func (db *DB) listBlogs(pageNum int, pageSize int) (int, []*pb.Blog) {
-	var blogs []*pb.Blog
+func (db *DB) ListBlogs(pageNum int, pageSize int) (int, []*backendpb.Blog) {
+	var blogs []*backendpb.Blog
 	pageNum--
 	db.DBLock.RLock()
 	defer db.DBLock.RUnlock()
@@ -130,7 +131,7 @@ func (db *DB) listBlogs(pageNum int, pageSize int) (int, []*pb.Blog) {
 	return total, blogs
 }
 
-func (db *DB) getBlog(blogId int) *pb.Blog {
+func (db *DB) GetBlog(blogId int) *backendpb.Blog {
 	db.DBLock.RLock()
 	defer db.DBLock.RUnlock()
 	if blogId >= len(db.blogs) {
@@ -141,8 +142,8 @@ func (db *DB) getBlog(blogId int) *pb.Blog {
 
 // ---------------------------------------------------------------------
 
-func (db *DB) listBlogsFromUser(user string, pageNum int, pageSize int) (int, []*pb.Blog) {
-	var blogs []*pb.Blog
+func (db *DB) ListBlogsFromUser(user string, pageNum int, pageSize int) (int, []*backendpb.Blog) {
+	var blogs []*backendpb.Blog
 	pageNum--
 	db.DBLock.RLock()
 	defer db.DBLock.RUnlock()
@@ -158,12 +159,12 @@ func (db *DB) listBlogsFromUser(user string, pageNum int, pageSize int) (int, []
 		}
 		return total, blogs
 	} else {
-		return 0, []*pb.Blog{}
+		return 0, []*backendpb.Blog{}
 	}
 }
 
 //Get everyone who the user follows
-func (db *DB) listFollowedFromUser(user string) (int, []string) {
+func (db *DB) ListFollowedFromUser(user string) (int, []string) {
 	var followed []string
 	db.DBLock.RLock()
 	defer db.DBLock.RUnlock()
@@ -179,7 +180,7 @@ func (db *DB) listFollowedFromUser(user string) (int, []string) {
 }
 
 //Get everyone who follows the user
-func (db *DB) listFollowerFromUser(user string) (int, []string) {
+func (db *DB) ListFollowerFromUser(user string) (int, []string) {
 	var follower []string
 	db.DBLock.RLock()
 	defer db.DBLock.RUnlock()
@@ -194,13 +195,13 @@ func (db *DB) listFollowerFromUser(user string) (int, []string) {
 	return 0, []string{}
 }
 
-func (db *DB) listFollowBlog(user string, pageNum int, pageSize int) (int, []*pb.Blog) {
-	var blogs []*pb.Blog
+func (db *DB) ListFollowBlog(user string, pageNum int, pageSize int) (int, []*backendpb.Blog) {
+	var blogs []*backendpb.Blog
 	db.DBLock.RLock()
 	defer db.DBLock.RUnlock()
-	_, followed := db.listFollowerFromUser(user)
+	_, followed := db.ListFollowerFromUser(user)
 	for _, fuser := range followed {
-		_, fblogs := db.listBlogsFromUser(fuser, 1, math.MaxInt)
+		_, fblogs := db.ListBlogsFromUser(fuser, 1, math.MaxInt)
 		blogs = append(blogs, fblogs...)
 	}
 	total := len(blogs)
@@ -209,13 +210,9 @@ func (db *DB) listFollowBlog(user string, pageNum int, pageSize int) (int, []*pb
 		pageNum = 0
 	}
 	m := math.Min(float64(total), float64((pageNum + 1) * pageSize))
-	var rblogs []*pb.Blog
+	var rblogs []*backendpb.Blog
 	for i := pageNum * pageSize; i < int(m); i++ {
 		rblogs = append(rblogs, blogs[i])
 	}
 	return total, rblogs
 }
-
-
-
-

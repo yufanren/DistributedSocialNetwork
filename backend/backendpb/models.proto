@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-option go_package = "./;proto";
+option go_package = "./;backendpb";
 
-package demo;
+package backendpb;
 
-service Demo {
+service Backend {
   rpc Login(AuthRequest) returns (AuthResponse) {}
   rpc Register(AuthRequest) returns (AuthResponse) {}
   rpc AddBlog(AddBlogRequest) returns (AddBlogResponse) {}
@@ -85,4 +85,3 @@ message ListUserResponse {
   int32 Total = 1;
   repeated string Parents = 2;
 }
-

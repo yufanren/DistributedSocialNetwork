@@ -49,13 +49,6 @@
                     </b-navbar-item>
                     <hr class="dropdown-divider">
                     <b-navbar-item
-                        tag="router-link"
-                        :to="{ path: `` }"
-                    >
-                        ⚙ Setting
-                    </b-navbar-item>
-                    <hr class="dropdown-divider">
-                    <b-navbar-item
                         tag="a"
                         @click="logout"
                     >

@@ -1,11 +1,11 @@
 import Vue from 'vue';
 import Element from 'element-ui'
 import router from '../router'
-import axios from "axios";
+import axios from "./axios";
 import store from "../store"
 
 let config = {
-  baseURL: "http://localhost:8091"
+  baseURL: "http://localhost:8012"
   // timeout: 60 * 1000, // Timeout
   // withCredentials: true, // Check cross-site Access-Control
 }
