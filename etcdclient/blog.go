@@ -1,16 +1,16 @@
 package etcdclient
 
 import (
+	"context"
 	. "cs9223-final-project/etcdclient/etcdclientpb"
 	"cs9223-final-project/utils"
-	"math"
-	"context"
-	"strconv"
-	clientv3 "go.etcd.io/etcd/client/v3"
-	"sync"
-	"fmt"
-	"sort"
 	"errors"
+	"fmt"
+	clientv3 "go.etcd.io/etcd/client/v3"
+	"math"
+	"sort"
+	"strconv"
+	"sync"
 	"time"
 )
 
@@ -157,7 +157,7 @@ func Getfollowblog_(username string, pageNum int, pageSize int) (int, []*Blog) {
 	defer cancel()
 	blogLock.Lock()
 	resp, err := cli.Get(ctx, fmt.Sprintf("user/%s/followed", username))
-	if err != nil {
+	if err != nil || len(resp.Kvs) == 0 {
 		return 0, []*Blog{}
 	}
 	followedMap := new(map[string]bool)
