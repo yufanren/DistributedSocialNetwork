@@ -37,7 +37,7 @@ func get(key string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	resp, err := cli.Get(ctx, key)
 	cancel()
-	if err != nil {
+	if err != nil || resp == nil{
 		return "", err
 	}
 	if len(resp.Kvs) == 0 {

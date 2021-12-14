@@ -5,7 +5,7 @@ make run-web &
 # cd ~/golabs/etcd && goreman -f Procfile start & #etcd
 # cd ~/golabs/go-final-project/frontend && npm run serve
 cd etcd && goreman -f Procfile start &
-cd frontend && npm run serve
+cd frontend && npm install && npm run serve
 
 trap 'kill $BGPID; exit' INT
 sleep 1024 &

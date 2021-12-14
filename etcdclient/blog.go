@@ -22,17 +22,16 @@ func Listblog_(pageNum int, pageSize int) (int, []*Blog) {
 	cli, err := makeClient()
 	defer cli.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	defer cancel()
 	kv := clientv3.NewKV(cli)
 	blogLock.Lock()
 	resp, err := cli.Get(ctx, "blognumber")
 	blogLock.Unlock()
 	if err != nil {
-		cancel()
 		return 0, []*Blog{}
 	}
 	total, err := strconv.Atoi(string(resp.Kvs[0].Value))
 	if err != nil {
-		cancel()
 		return 0, []*Blog{}
 	}
 	if pageNum * pageSize > total {
@@ -45,8 +44,7 @@ func Listblog_(pageNum int, pageSize int) (int, []*Blog) {
 		clientv3.WithSort(clientv3.SortByKey, clientv3.SortDescend),
 	}
 	Blogs, err := kv.Get(ctx, "blog/" + FixedLengthItoa(pageNum * pageSize, 10), opts...)
-	cancel()
-	if err != nil {
+	if err != nil || Blogs == nil {
 		return 0, []*Blog{}
 	}
 
@@ -71,9 +69,12 @@ func Addblog_(blog *Blog) (int, error) {
 	defer blogLock.Unlock()
 
 	resp, _ := cli.Get(ctx, "blognumber")
+	if resp == nil {
+		return 0, errors.New("Database not responding!")
+	}
 	blogNumber, _ := strconv.Atoi(string(resp.Kvs[0].Value))
 	resp, err = cli.Get(ctx, fmt.Sprintf("user/%s/blogs", author))
-	if err != nil {
+	if err != nil || resp == nil {
 		return blogNumber, errors.New("can't find user blog record")
 	}
 	bloglist := make([]int, 0)
@@ -91,10 +92,10 @@ func Addblog_(blog *Blog) (int, error) {
 	if err != nil {
 		return blogNumber, err
 	}
-	_, err = cli.KV.Txn(ctx).Then(clientv3.OpPut(fmt.Sprintf("user/%s/blogs", author), string(encodedBlogs)),
+	txnresp, err := cli.KV.Txn(ctx).Then(clientv3.OpPut(fmt.Sprintf("user/%s/blogs", author), string(encodedBlogs)),
 								clientv3.OpPut("blognumber", strconv.Itoa(blogNumber+1)),
 								clientv3.OpPut(fmt.Sprintf("blog/%s", FixedLengthItoa(blogNumber, 10)), string(encodedBlog))).Commit()
-	if err != nil {
+	if err != nil || txnresp == nil {
 		return blogNumber, errors.New("blog post transaction failed")
 	}
 	return blogNumber,  nil
@@ -121,7 +122,7 @@ func Getuserblog_(username string, pageNum int, pageSize int) (int, []*Blog) {
 	blogLock.Lock()
 	resp, err := cli.Get(ctx, fmt.Sprintf("user/%s/blogs", username))
 	blogLock.Unlock()
-	if err != nil {
+	if err != nil || resp == nil {
 		return 0, []*Blog{}
 	}
 	bloglist := new([]int)
@@ -140,11 +141,14 @@ func Getuserblog_(username string, pageNum int, pageSize int) (int, []*Blog) {
 	var blogs []*Blog
 	for _, blogId := range blogpagelist {
 		resp, err := cli.Get(ctx, fmt.Sprintf("blog/%s", FixedLengthItoa(blogId, 10)))
-		if err != nil {
+		if err != nil || resp == nil {
 			return len(blogs), blogs
 		}
 		blog := new(Blog)
 		err = utils.Decode([]byte(resp.Kvs[0].Value), blog)
+		if err != nil {
+			return len(blogs), blogs
+		}
 		blogs = append(blogs, blog)
 	}
 	return len(blogs), blogs
@@ -157,7 +161,7 @@ func Getfollowblog_(username string, pageNum int, pageSize int) (int, []*Blog) {
 	defer cancel()
 	blogLock.Lock()
 	resp, err := cli.Get(ctx, fmt.Sprintf("user/%s/followed", username))
-	if err != nil || len(resp.Kvs) == 0 {
+	if err != nil || resp == nil || len(resp.Kvs) == 0 {
 		return 0, []*Blog{}
 	}
 	followedMap := new(map[string]bool)
@@ -169,7 +173,7 @@ func Getfollowblog_(username string, pageNum int, pageSize int) (int, []*Blog) {
 	for user, isfollowed := range *followedMap {
 		if isfollowed {
 			resp, err = cli.Get(ctx, fmt.Sprintf("user/%s/blogs", user))
-			if err != nil {
+			if err != nil || resp == nil{
 				continue
 			}
 			tmplist := new([]int)
@@ -193,7 +197,7 @@ func Getfollowblog_(username string, pageNum int, pageSize int) (int, []*Blog) {
 	var blogs []*Blog
 	for _, blogId := range blogpagelist {
 		resp, err := cli.Get(ctx, fmt.Sprintf("blog/%s", FixedLengthItoa(blogId, 10)))
-		if err != nil {
+		if err != nil || resp == nil{
 			return len(blogs), blogs
 		}
 		blog := new(Blog)
@@ -212,8 +216,9 @@ func StartDB() {
 	resp, err := cli.KV.Txn(ctx).If(clientv3.Compare(clientv3.Version("blognumber"), ">",
 		0)).Else(clientv3.OpPut("blognumber", "0")).Commit()
 	cancel()	
-	if err != nil {
+	if err != nil || resp == nil {
 		fmt.Printf("Exception while preping DB")
+		return
 	}
 	if resp.Succeeded {
 		fmt.Printf("DB already exists")

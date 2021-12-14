@@ -39,7 +39,10 @@ func Register_(username string, password string) error {
 		clientv3.OpPut(fmt.Sprintf("user/%s/blogs", username), string(encodedBlogList)),
 		clientv3.OpPut(fmt.Sprintf("user/%s/followed", username), string(encodedFollowedList)),
 		clientv3.OpPut(fmt.Sprintf("user/%s/follower", username), string(encodedFollowerList))).Commit()
-	cancel()	
+	defer cancel()	
+	if err != nil || response == nil {
+		return errors.New("Failed to register user!")
+	}
 	if response.Succeeded {
 		return errors.New("user name already taken")
 	}
@@ -104,9 +107,12 @@ func Follow_(follower string, parent string) error {
 	cli, err := makeClient()
 	defer cli.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
-	_, err = cli.KV.Txn(ctx).Then(clientv3.OpPut(fmt.Sprintf("user/%s/follower", parent), string(finalParentFollower)),
+	defer cancel()
+	txnresp, err := cli.KV.Txn(ctx).Then(clientv3.OpPut(fmt.Sprintf("user/%s/follower", parent), string(finalParentFollower)),
 					clientv3.OpPut(fmt.Sprintf("user/%s/followed", follower), string(finalFollowerFollowed))).Commit()
-	cancel()
+	if err != nil || txnresp == nil {
+		return errors.New("Unable to follow this user")
+	}				
 	return err
 } 
 
